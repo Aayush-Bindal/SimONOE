@@ -1,51 +1,112 @@
 "use client";
-import { MapContainer, TileLayer, GeoJSON, Tooltip } from 'react-leaflet';
+
+import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Card } from './ui/card';
+import { indiaOfficialGeoJSON } from '@/lib/india-data';
+import { useRef, useEffect } from 'react';
+import L from 'leaflet';
 
-// Simplified GeoJSON-like structure would go here. 
-// For this demo, we will use a basic container as full GeoJSON is too large for context.
-// In a real app, import your india-states.json here.
+interface IndiaMapProps {
+  selectedStates: string[];
+  onStateToggle: (stateName: string) => void;
+}
 
-const mapStyle = {
-    fillColor: '#7A1F1F',
-    weight: 2,
+// Styling Constants
+const STYLE_DEFAULT = {
+    fillColor: '#7A1F1F', // Maroon
+    weight: 1,
     opacity: 1,
-    color: 'white',
-    dashArray: '3',
-    fillOpacity: 0.7
+    color: '#ffffff',     // White borders
+    dashArray: '0',
+    fillOpacity: 0.85
 };
 
-export default function IndiaMap() {
+const STYLE_SELECTED = {
+    fillColor: '#D4AF37', // Gold
+    weight: 2,
+    color: '#000080',     // Navy Border
+    fillOpacity: 1
+};
+
+const STYLE_HOVER = {
+    weight: 3,
+    color: '#FF9933',     // Saffron highlight
+    fillOpacity: 0.9
+};
+
+export default function IndiaMap({ selectedStates, onStateToggle }: IndiaMapProps) {
+    const mapRef = useRef<L.Map>(null);
+
+    // Style function based on selection state
+    const getStyle = (feature: any) => {
+        const isSelected = selectedStates.includes(feature.properties.name);
+        return isSelected ? STYLE_SELECTED : STYLE_DEFAULT;
+    };
+
+    const onEachFeature = (feature: any, layer: L.Layer) => {
+        const stateName = feature.properties.name;
+
+        // Tooltip
+        layer.bindTooltip(stateName, {
+            direction: 'center',
+            className: "bg-white/90 text-gov-maroon px-2 py-0.5 text-xs font-bold border border-gov-gold shadow-sm"
+        });
+
+        // Events
+        layer.on({
+            mouseover: (e) => {
+                const l = e.target;
+                l.setStyle(STYLE_HOVER);
+                l.bringToFront();
+            },
+            mouseout: (e) => {
+                const l = e.target;
+                // Revert to selected or default style
+                // @ts-ignore
+                const currentStyle = selectedStates.includes(stateName) ? STYLE_SELECTED : STYLE_DEFAULT;
+                l.setStyle(currentStyle);
+            },
+            click: (e) => {
+                onStateToggle(stateName);
+                L.DomEvent.stopPropagation(e); // Prevent map click
+            }
+        });
+    };
+
     return (
-        <Card className="h-[400px] w-full overflow-hidden relative bg-blue-50/50 border-gov-navy/20">
-             <div className="absolute inset-0 flex items-center justify-center text-gov-navy/40 font-bold z-0 pointer-events-none">
-                Interactive Map Component Loaded
-             </div>
-             
+        <Card className="h-[500px] w-full overflow-hidden relative bg-blue-50/50 border-gov-navy/20 shadow-md">
              <MapContainer 
-                center={[20.5937, 78.9629]} 
+                center={[22.5, 82.5]} 
                 zoom={4} 
                 scrollWheelZoom={false} 
-                style={{ height: "100%", width: "100%", zIndex: 1 }}
+                className="h-full w-full z-10"
                 attributionControl={false}
+                ref={mapRef}
+                dragging={true}
+                doubleClickZoom={false}
              >
-                <TileLayer
-                    url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                <TileLayer url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png" />
+                
+                {/* Key forces re-render when selection changes to update styles efficiently */}
+                <GeoJSON 
+                    key={JSON.stringify(selectedStates)}
+                    data={indiaOfficialGeoJSON as any} 
+                    style={getStyle} 
+                    onEachFeature={onEachFeature} 
                 />
-                {/* <GeoJSON data={indiaGeoData} style={mapStyle} onEachFeature={...} /> 
-                  GeoJSON omitted for brevity 
-                */}
             </MapContainer>
             
-            <div className="absolute bottom-4 right-4 bg-white/90 p-2 rounded shadow text-xs z-[400]">
-                <div className="font-bold mb-1">Impact Intensity</div>
-                <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-gov-maroon"></div> High
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-gov-gold"></div> Medium
-                </div>
+            <div className="absolute bottom-4 left-4 bg-white/95 p-3 rounded-lg border-l-4 border-l-gov-gold shadow-lg z-[400] text-xs">
+                 <div className="font-bold mb-2 text-gov-maroon uppercase">Interactive Selection</div>
+                 <div className="flex items-center gap-2 mb-1">
+                    <div className="w-3 h-3 bg-gov-maroon border border-gray-400"></div> 
+                    <span>Not Selected</span>
+                 </div>
+                 <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-gov-gold border border-gov-navy"></div> 
+                    <span className="font-bold">Selected for Simulation</span>
+                 </div>
             </div>
         </Card>
     );
