@@ -3,7 +3,18 @@
 import { useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
-import { Activity, IndianRupee, Gavel, Briefcase, TrendingUp, Map as MapIcon, List } from "lucide-react";
+import { 
+  Activity, 
+  IndianRupee, 
+  Gavel, 
+  Briefcase, 
+  TrendingUp, 
+  Map as MapIcon, 
+  List, 
+  Wallet, 
+  Users, 
+  Clock 
+} from "lucide-react";
 
 // Components
 import { ControlPanel } from "@/components/ControlPanel";
@@ -31,9 +42,11 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<SimulationResponse | null>(null);
   const dashboardRef = useRef<HTMLDivElement>(null);
-  
-  // State for parameters & selection
+
+  // 1. State for the Policy Levers (New)
   const [params, setParams] = useState<SimulationParams>(DEFAULT_PARAMS);
+
+  // 2. State for State Selection (Existing)
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
 
   const handleStateToggle = (stateName: string) => {
@@ -42,14 +55,22 @@ export default function Dashboard() {
     );
   };
 
+  // 3. Merged Simulation Handler
   const handleSimulation = async () => {
     setLoading(true);
     try {
-        const requestPayload = { ...params, selectedStates: selectedStates.length > 0 ? selectedStates : ["All India"] };
+        // We combine the NEW sliders (params) with the EXISTING state selection
+        const requestPayload = { 
+            ...params, 
+            selectedStates: selectedStates.length > 0 ? selectedStates : ["All India"] 
+        };
+        
         const result = await fetchSimulation(requestPayload);
+        
         setData(result);
         toast.success("Simulation Complete", { description: "Impact analysis updated successfully." });
     } catch (error) {
+        console.error(error);
         toast.error("Simulation failed", { description: "Please check your network connection." });
     } finally {
         setLoading(false);
@@ -60,13 +81,13 @@ export default function Dashboard() {
     <div className="flex flex-col min-h-screen bg-zinc-50/50 dark:bg-zinc-950 font-sans text-zinc-900">
       {/* 1. Fixed Header */}
       <Header />
-      
+
       <main className="flex-1 container mx-auto p-6 lg:p-8 max-w-[1600px]">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
+
           {/* --- LEFT COLUMN: VISUALIZATION AREA (9 cols) --- */}
           <div className="lg:col-span-9 space-y-8">
-            
+
             {/* Top Bar: Title & Export */}
             <div className="flex justify-between items-center pb-2 border-b border-zinc-200">
               <div className="space-y-1">
@@ -214,13 +235,36 @@ export default function Dashboard() {
 
           {/* --- RIGHT COLUMN: SIDEBAR (3 cols) --- */}
           <div className="lg:col-span-3">
-             <div className="sticky top-6">
-                <ControlPanel 
-                    params={params} 
-                    setParams={setParams} 
-                    onRun={handleSimulation} 
-                    isRunning={loading} 
-                />
+             <div className="sticky top-6 space-y-4">
+               
+               {/* 1. The Policy Levers Panel */}
+               <ControlPanel 
+                   params={params} 
+                   setParams={setParams} 
+                   onRun={handleSimulation} 
+                   isRunning={loading} 
+               />
+               
+               {/* 2. THE RESTORED SECTION: Selection Summary Card */}
+               <Card className="border-l-4 border-l-blue-900 shadow-sm">
+                   <CardHeader className="py-3 bg-white dark:bg-zinc-900">
+                       <CardTitle className="text-sm font-semibold">Selected Regions ({selectedStates.length})</CardTitle>
+                   </CardHeader>
+                   <CardContent className="py-2 text-xs text-gray-600 dark:text-gray-400 max-h-40 overflow-y-auto bg-white dark:bg-zinc-900">
+                       {selectedStates.length === 0 ? (
+                           <span className="italic">All India (Default)</span>
+                       ) : (
+                           <div className="flex flex-wrap gap-1">
+                               {selectedStates.map(s => (
+                                   <span key={s} className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+                                       {s}
+                                   </span>
+                               ))}
+                           </div>
+                       )}
+                   </CardContent>
+               </Card>
+
              </div>
           </div>
 
@@ -230,7 +274,7 @@ export default function Dashboard() {
   );
 }
 
-// --- SUB-COMPONENTS FOR CLEANER CODE ---
+// --- SUB-COMPONENTS ---
 
 function MetricCard({ title, color, icon, items }: any) {
   const colorMap: any = {
