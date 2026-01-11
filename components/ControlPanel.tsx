@@ -43,7 +43,7 @@ const LEVERS: LeverConfig[] = [
   {
     key: "syncWindow",
     label: "Sync Window",
-    unit: "d",
+    unit: "Days",
     min: 0,
     max: 180,
     step: 5,
@@ -61,20 +61,11 @@ const LEVERS: LeverConfig[] = [
   {
     key: "maxTermAdjust",
     label: "Max Term Adjust",
-    unit: "mo",
+    unit: "Months",
     min: 0,
     max: 24,
     step: 1,
     description: "Maximum extension/curtailment allowed for alignment",
-  },
-  {
-    key: "resourceBuffer",
-    label: "Resource Buffer",
-    unit: "%",
-    min: 0,
-    max: 50,
-    step: 5,
-    description: "Extra EVMs/personnel reserved for logistical shocks",
   },
   {
     key: "electionPhases",
@@ -97,7 +88,7 @@ const LEVERS: LeverConfig[] = [
   {
     key: "timeHorizon",
     label: "Time Horizon",
-    unit: "y",
+    unit: "Years",
     min: 5,
     max: 30,
     step: 1,
