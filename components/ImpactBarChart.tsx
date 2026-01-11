@@ -1,36 +1,81 @@
 "use client";
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { SimulationResponse } from '@/lib/api';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SimulationResponse } from "@/types/simulation";
 
-export default function ImpactBarChart({ data }: { data: SimulationResponse | null }) {
+interface ImpactBarChartProps {
+  data: SimulationResponse | null;
+}
+
+export default function ImpactBarChart({ data }: ImpactBarChartProps) {
   if (!data) return null;
 
-  const chartData = data.state_wise.map(s => ({
-    name: s.state_code,
-    Savings: s.savings_crore,
-    Alignment: s.alignment_score * 50 // Scaling for visualization
-  }));
+  const chartData = [
+    { 
+      name: "Financial", 
+      metric: "Savings %", 
+      value: data.financial.savings_percent, 
+      fill: "#15803d" // Green
+    },
+    { 
+      name: "Governance", 
+      metric: "Turnout Boost %", 
+      value: data.governance.avg_turnout_boost_percent, 
+      fill: "#b45309" // Amber
+    },
+    { 
+      name: "Admin", 
+      metric: "Personnel (Lakh)", 
+      value: data.administrative.personnel_required_lakh, 
+      fill: "#1d4ed8" // Blue
+    },
+    { 
+      name: "Economic", 
+      metric: "GDP Boost %", 
+      value: data.economic.gdp_boost_percent, 
+      fill: "#7f1d1d" // Maroon
+    },
+  ];
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base font-bold text-gray-700">State-wise Projected Savings (₹ Crore)</CardTitle>
+    <Card className="h-full border-l-4 border-l-blue-900 shadow-sm">
+      <CardHeader>
+        <CardTitle className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">
+          Key Impact Metrics
+        </CardTitle>
       </CardHeader>
-      <CardContent className="h-[300px]">
+      <CardContent className="h-[250px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-            <XAxis dataKey="name" tick={{fontSize: 12}} />
-            <YAxis tick={{fontSize: 12}} />
-            <Tooltip 
-                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                cursor={{fill: '#f3f4f6'}}
+          <BarChart data={chartData} layout="vertical" margin={{ left: 40 }}>
+            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e5e7eb" />
+            <XAxis type="number" hide />
+            <YAxis 
+              dataKey="name" 
+              type="category" 
+              tick={{ fontSize: 12, fill: "#52525b" }} 
+              width={80} 
             />
-            <Legend />
-            <Bar dataKey="Savings" fill="var(--color-gov-maroon)" radius={[4, 4, 0, 0]} name="Savings (Cr)" />
-            <Bar dataKey="Alignment" fill="var(--color-gov-gold)" radius={[4, 4, 0, 0]} name="Alignment Score" />
+            <Tooltip 
+              cursor={{ fill: 'transparent' }}
+              content={({ active, payload }) => {
+                if (active && payload && payload.length) {
+                  const d = payload[0].payload;
+                  return (
+                    <div className="bg-white border border-zinc-200 p-2 rounded shadow-lg text-xs">
+                      <p className="font-bold">{d.name}</p>
+                      <p>{d.metric}: <span className="font-mono font-semibold">{d.value}</span></p>
+                    </div>
+                  );
+                }
+                return null;
+              }}
+            />
+            <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={32}>
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+              ))}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
