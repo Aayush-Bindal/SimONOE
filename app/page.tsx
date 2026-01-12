@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import { 
@@ -57,6 +57,7 @@ export default function Dashboard() {
 
   // 3. Merged Simulation Handler
   const handleSimulation = async () => {
+
     setLoading(true);
     try {
         // We combine the NEW sliders (params) with the EXISTING state selection
@@ -171,7 +172,6 @@ export default function Dashboard() {
                            <IndiaMap 
                                 selectedStates={selectedStates} 
                                 onStateToggle={handleStateToggle}
-                                stateData={data?.state_wise || []}
                            />
                         </div>
                         {/* Legend Overlay */}
@@ -276,8 +276,21 @@ export default function Dashboard() {
 
 // --- SUB-COMPONENTS ---
 
-function MetricCard({ title, color, icon, items }: any) {
-  const colorMap: any = {
+interface MetricCardItem {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}
+
+interface MetricCardProps {
+  title: string;
+  color: "green" | "amber" | "blue" | "red";
+  icon: React.ReactNode;
+  items: MetricCardItem[];
+}
+
+function MetricCard({ title, color, icon, items }: MetricCardProps) {
+  const colorMap: Record<"green" | "amber" | "blue" | "red", string> = {
     green: "border-green-600 text-green-700",
     amber: "border-amber-600 text-amber-700",
     blue: "border-blue-600 text-blue-700",
@@ -292,7 +305,7 @@ function MetricCard({ title, color, icon, items }: any) {
           <h3 className="text-xs font-bold uppercase tracking-widest">{title}</h3>
         </div>
         <div className="space-y-3">
-          {items.map((item: any, i: number) => (
+          {items.map((item: MetricCardItem, i: number) => (
             <div key={i} className="flex justify-between items-baseline">
               <span className="text-sm text-zinc-500 font-medium">{item.label}</span>
               <span className={`font-mono ${item.highlight ? "text-lg font-bold text-zinc-900" : "text-sm font-semibold text-zinc-700"}`}>

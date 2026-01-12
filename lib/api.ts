@@ -1,38 +1,9 @@
-export interface SimulationRequest {
-  syncLevel: number; // 0-100%
-  syncWindowDays: number;
-  midTermProb: number;
-  selectedStates: string[];
-  metricFocus: 'financial' | 'governance' | 'administrative';
-}
+import { SimulationParams, SimulationResponse } from '@/types/simulation';
 
-export interface SimulationResponse {
-  financial: {
-    total_savings_crore: number;
-    savings_percent: number;
-  };
-  governance: {
-    avg_turnout_boost_percent: number;
-    mcc_days_reduction_annual: number;
-  };
-  administrative: {
-    personnel_required_lakh: number;
-  };
-  economic: {
-    gdp_boost_percent: number;
-  };
-  state_wise: Array<{
-    state_code: string;
-    state_name: string;
-    savings_crore: number;
-    alignment_score: number;
-  }>;
-  history: Array<{
-    year: number;
-    cost_with_onoe: number;
-    cost_without_onoe: number;
-  }>;
-}
+// Request type extends params and adds selectedStates
+export type SimulationRequest = SimulationParams & {
+  selectedStates: string[];
+};
 
 export const fetchSimulation = async (
   data: SimulationRequest
@@ -46,29 +17,34 @@ export const fetchSimulation = async (
       resolve({
         financial: { 
           total_savings_crore: 24500 + (data.syncLevel * 100), 
-          savings_percent: 41 + (data.syncLevel / 10) 
+          savings_percent: 41 + (data.syncLevel / 10),
+          evm_extra_cost_crore: 2300 - (data.syncLevel * 5)
         },
         governance: { 
           avg_turnout_boost_percent: 6.2, 
-          mcc_days_reduction_annual: 210 
+          mcc_days_reduction_annual: 210,
+          crime_rate_reduction_per_100k: 45
         },
         administrative: { 
-          personnel_required_lakh: 85 - (data.syncLevel / 5) 
+          personnel_required_lakh: 85 - (data.syncLevel / 5),
+          evm_scaling_factor: 1.2,
+          phase_count: data.electionPhases
         },
         economic: { 
-          gdp_boost_percent: 1.42 
+          gdp_boost_percent: 1.42,
+          inflation_change_pp: -0.3,
+          fiscal_deficit_change_pp: -0.8
+        },
+        monte_carlo_summary: {
+          mean_outcome: 2.1,
+          std_deviation: 0.45
         },
         state_wise: [
-          { state_code: "MH", state_name: "Maharashtra", savings_crore: 4500, alignment_score: 92 },
-          { state_code: "UP", state_name: "Uttar Pradesh", savings_crore: 6200, alignment_score: 88 },
-          { state_code: "KA", state_name: "Karnataka", savings_crore: 3100, alignment_score: 75 },
-          { state_code: "TN", state_name: "Tamil Nadu", savings_crore: 2900, alignment_score: 60 },
-          { state_code: "DL", state_name: "Delhi", savings_crore: 1200, alignment_score: 95 },
-        ],
-        history: [
-            { year: 2029, cost_with_onoe: 10000, cost_without_onoe: 15000 },
-            { year: 2034, cost_with_onoe: 12000, cost_without_onoe: 22000 },
-            { year: 2039, cost_with_onoe: 14000, cost_without_onoe: 35000 },
+          { state_code: "MH", savings_crore: 4500, turnout_boost: 6.5 },
+          { state_code: "UP", savings_crore: 6200, turnout_boost: 5.8 },
+          { state_code: "KA", savings_crore: 3100, turnout_boost: 7.2 },
+          { state_code: "TN", savings_crore: 2900, turnout_boost: 6.1 },
+          { state_code: "DL", savings_crore: 1200, turnout_boost: 8.3 },
         ]
       });
     }, 1200);
